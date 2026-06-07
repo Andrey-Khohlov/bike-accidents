@@ -7,6 +7,8 @@ import folium
 from folium.plugins import HeatMap
 import requests
 
+from schemas import Root
+
 
 logging.basicConfig(level = logging.DEBUG,
                     format= "[%(levelname)s] [%(name)s] %(message)s",
@@ -27,6 +29,8 @@ def check_categories(params):
     for row in dict_rows:
         if int(row.get('rows_code')) in params['pok']:
             categories.append(row.get('rows_name'))
+        if "вело" in row.get('rows_name') and int(row.get('rows_code')) not in params['pok']:
+            logger.warning("Обнаружен новый код для вело: %s, %s", int(row.get('rows_code')), row.get('rows_name'))
     logger.info("Имеются категории:\n\t- %s ", '\n\t- '.join(categories))
 
 def parser(params):
@@ -41,7 +45,7 @@ def parser(params):
         # Обработка ответа
         if response.status_code == 200:
             data = response.json()
-            with open("data.json", "w") as f:
+            with open("/data/data.json", "w") as f:
                 json.dump(data, f)
             logger.info("Успешный ответ стат.гибдд.рф")
         else:
@@ -49,18 +53,14 @@ def parser(params):
     except requests.exceptions.RequestException as e:
         logger.warning("Ошибка запроса:", e)
 
-    return data
 
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
     
     params = {'pok': [39, 119, 131, 110], 'dat': '2.2024', 'reg': [1145, 1146]}
     # check_categories(params)
-    # data = parser(params)
+    parser(params)
     # http://стат.гибдд.рф/opendataapi/v1/kartdtp/rows?pok=39,119,131,110,&dat=3.2026&reg=1145,1146
-    with open("data.json", "r") as f:
-        data = json.load(f)
-    pprint(data)
 
     
 
