@@ -3,4 +3,5 @@
 /.env
 /.idea/
 /data/
-/data_1/
+/data_temp/
+/data_msk/

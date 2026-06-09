@@ -81,7 +81,7 @@ def parser(params, start_date, end_date):
         raise
     params['pok'] = ','.join((str(i) for i in params['pok']))
     params['reg'] = ','.join((str(i) for i in params['reg']))
-    exist_files = os.listdir('data')
+    exist_files = os.listdir('data_msk')
     logger.debug("exist_files: %s", sorted(exist_files))
     for date in dates:
         name = "-".join(date.split('.')[::-1])
@@ -91,7 +91,7 @@ def parser(params, start_date, end_date):
             
             response = requests.get(url, params=params | {'dat': date})
             data = response.json()
-            with open(f"data/msk_{name}.json", "w") as f:
+            with open(f"data_msk/msk_{name}.json", "w") as f:
                 json.dump(data, f)
             logger.info("Успешный ответ стат.гибдд.рф для %s", date)
         except requests.exceptions.RequestException as e:
@@ -106,7 +106,7 @@ def parser(params, start_date, end_date):
                 try:
                     response = requests.get(url, params=params_reg)
                     data = response.json()
-                    with open(f"data/msk_{name}_{reg}.json", "w") as f:
+                    with open(f"data_msk/msk_{name}_{reg}.json", "w") as f:
                         json.dump(data, f)
                     logger.info("Успешный ответ стат.гибдд.рф для даты %s и региона %s", date, reg)
                 except requests.exceptions.RequestException as e:
@@ -123,7 +123,7 @@ def main():
     'pok': [39, 119, 131, 110],
     'reg': [1145, 1146]
     }
-    # check_categories(params)
+    check_categories(params)
     parser(params, start_date='1.2015', end_date='5.2026')
 
 
