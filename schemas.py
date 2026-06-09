@@ -22,7 +22,7 @@ class TsInfo(BaseModel):
     t_ts: str
     m_ts: str
     marka_ts: str
-    color: str
+    color: strdata
     m_pov: str
     t_n: str
     r_rul: str
