@@ -83,13 +83,27 @@ def print_structure(data, indent=0, max_depth=10):
 def main():
     # Это наш будущий скрипт для загрузчика GPX
     file_uploader_js = """
-    <script>
-        // Дожидаемся, пока карта и DOM полностью загрузятся
-        document.addEventListener('DOMContentLoaded', function() {
-            // Используем правильное имя переменной карты (возьмите из вашего HTML)
-            var map = map_d29a2b5887f61f2b07fca994a4d5ecfe;
+        <script>
+    (function() {
+        // Функция, которая будет выполнена после загрузки карты
+        function initGPXUploader() {
+            // 1. Находим объект карты Leaflet среди глобальных переменных
+            var map = null;
+            for (var key in window) {
+                if (window[key] && window[key] instanceof L.Map) {
+                    map = window[key];
+                    break;
+                }
+            }
+            if (!map) {
+                // Если карта ещё не создана – пробуем снова через 200 мс
+                console.log("Карта не найдена, повтор через 200ms");
+                setTimeout(initGPXUploader, 200);
+                return;
+            }
+            console.log("Карта найдена, добавляем контрол загрузки GPX");
 
-            // Создаем контрол загрузки файлов
+            // 2. Создаём контрол с кнопкой выбора файла
             var controlPanel = L.control({position: 'topright'});
             controlPanel.onAdd = function(map) {
                 var div = L.DomUtil.create('div', 'info legend');
@@ -102,7 +116,7 @@ def main():
             };
             controlPanel.addTo(map);
 
-            // Функция парсинга GPX
+            // 3. Функция парсинга GPX
             function parseGPX(xmlString) {
                 var parser = new DOMParser();
                 var xmlDoc = parser.parseFromString(xmlString, "text/xml");
@@ -116,26 +130,37 @@ def main():
                 return points;
             }
 
-            // Обработчик выбора файла (событие делегирования или после создания)
-            // Можно повесить на document, так как input появится динамически
-            document.getElementById('gpxFileInput').addEventListener('change', function(e) {
-                var file = e.target.files[0];
-                if (!file) return;
+            // 4. Обработчик загрузки файла (используем делегирование или ждём появления элемента)
+            // Элемент input появится динамически, поэтому вешаем обработчик на document
+            document.addEventListener('change', function(e) {
+                if (e.target && e.target.id === 'gpxFileInput') {
+                    var file = e.target.files[0];
+                    if (!file) return;
 
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var gpxContent = e.target.result;
-                    var coordinates = parseGPX(gpxContent);
-                    if (coordinates.length === 0) {
-                        alert('Не найдены точки trkpt в GPX файле');
-                        return;
-                    }
-                    var polyline = L.polyline(coordinates, {color: 'red', weight: 4}).addTo(map);
-                    map.fitBounds(polyline.getBounds());
-                };
-                reader.readAsText(file);
+                    var reader = new FileReader();
+                    reader.onload = function(evt) {
+                        var gpxContent = evt.target.result;
+                        var coordinates = parseGPX(gpxContent);
+                        if (coordinates.length === 0) {
+                            alert("Не найдено точек trkpt в GPX файле");
+                            return;
+                        }
+                        var polyline = L.polyline(coordinates, {color: 'red', weight: 4}).addTo(map);
+                        map.fitBounds(polyline.getBounds());
+                        console.log("GPX загружен, точек: " + coordinates.length);
+                    };
+                    reader.readAsText(file);
+                }
             });
-        });
+        }
+
+        // Запускаем процесс поиска карты после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initGPXUploader);
+        } else {
+            initGPXUploader();
+        }
+    })();
     </script>
     """
 
