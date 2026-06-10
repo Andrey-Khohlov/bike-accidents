@@ -81,6 +81,64 @@ def print_structure(data, indent=0, max_depth=10):
 
 
 def main():
+    # Это наш будущий скрипт для загрузчика GPX
+    file_uploader_js = """
+    <script>
+        // Дожидаемся, пока карта и DOM полностью загрузятся
+        document.addEventListener('DOMContentLoaded', function() {
+            // Используем правильное имя переменной карты (возьмите из вашего HTML)
+            var map = map_d29a2b5887f61f2b07fca994a4d5ecfe;
+
+            // Создаем контрол загрузки файлов
+            var controlPanel = L.control({position: 'topright'});
+            controlPanel.onAdd = function(map) {
+                var div = L.DomUtil.create('div', 'info legend');
+                div.innerHTML = '<input type="file" id="gpxFileInput" accept=".gpx" style="padding: 8px; background: white; border: 2px solid #ccc; border-radius: 5px;">';
+                div.style.backgroundColor = 'white';
+                div.style.padding = '8px';
+                div.style.borderRadius = '5px';
+                div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+                return div;
+            };
+            controlPanel.addTo(map);
+
+            // Функция парсинга GPX
+            function parseGPX(xmlString) {
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+                var points = [];
+                var trkpts = xmlDoc.getElementsByTagName("trkpt");
+                for (var i = 0; i < trkpts.length; i++) {
+                    var lat = parseFloat(trkpts[i].getAttribute("lat"));
+                    var lon = parseFloat(trkpts[i].getAttribute("lon"));
+                    points.push([lat, lon]);
+                }
+                return points;
+            }
+
+            // Обработчик выбора файла (событие делегирования или после создания)
+            // Можно повесить на document, так как input появится динамически
+            document.getElementById('gpxFileInput').addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                if (!file) return;
+
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var gpxContent = e.target.result;
+                    var coordinates = parseGPX(gpxContent);
+                    if (coordinates.length === 0) {
+                        alert('Не найдены точки trkpt в GPX файле');
+                        return;
+                    }
+                    var polyline = L.polyline(coordinates, {color: 'red', weight: 4}).addTo(map);
+                    map.fitBounds(polyline.getBounds());
+                };
+                reader.readAsText(file);
+            });
+        });
+    </script>
+    """
+
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
     
     points = []
@@ -104,7 +162,7 @@ def main():
                 for accident in pok.result.dtpcardlist.info_dtp:
                     points.append((accident.coord_w, accident.coord_l))
     logger.info("Обнаружено %s точек ДТП.", f"{len(points):,d}")
-    logger.info("Невалидные файлы: %s \n", "\n".join(sorted(corrupted_files)))
+    logger.info("Невалидные файлы:\n%s", "\n".join(sorted(corrupted_files)))
     center = (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
     m = folium.Map(
         location=center,
@@ -118,6 +176,10 @@ def main():
         radius=10,
         blur=10,
     ).add_to(m)
+    # Внедряем JS-код в нашу карту
+    m.get_root().html.add_child(folium.Element(file_uploader_js))
+
+
     output_file ='index.html'
     # TODO attribution_removed = remove_attribution_line(out_path, target="attribution")  # удаляет подписи фреймворков с карты
     out_path = Path(output_file)

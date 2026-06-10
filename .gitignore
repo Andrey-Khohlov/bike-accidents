@@ -5,3 +5,5 @@
 /data/
 /data_temp/
 /data_msk/
+/__pycache__/
+__pycache__/schemas.cpython-310.pyc
