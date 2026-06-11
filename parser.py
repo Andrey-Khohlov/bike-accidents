@@ -1,15 +1,16 @@
-from copy import deepcopy
+# from copy import deepcopy
 import json
 import logging
 import os
 import sys
-from datetime import datetime
-from pprint import pprint
+# from datetime import datetime
+# from pprint import pprint
+from time import sleep
 
-import folium
-from folium.plugins import HeatMap
+# import folium
+# from folium.plugins import HeatMap
 import requests
-from dateutil import relativedelta
+# from dateutil import relativedelta
 
 from custom_exceptions import DateRangeError
 from schemas import Root
@@ -87,8 +88,7 @@ def parser(params, start_date, end_date):
         name = "-".join(date.split('.')[::-1])
         if f"msk_{name}.json" in exist_files:
             continue
-        try:
-            
+        try:   
             response = requests.get(url, params=params | {'dat': date})
             data = response.json()
             with open(f"data_msk/msk_{name}.json", "w") as f:
@@ -114,6 +114,7 @@ def parser(params, start_date, end_date):
         except Exception as e:
             logger.exception("Ошибка парсинга: %s", e)      
             raise
+        sleep(5)
 
 
 def main():

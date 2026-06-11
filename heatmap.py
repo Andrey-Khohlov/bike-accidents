@@ -27,22 +27,28 @@ def schema_investigation(file):
     with open(file, 'r', encoding='utf-8') as f:
         raw_json = json.load(f)
 
-    data = Root.model_validate(raw_json)
-    # pprint(Root.model_json_schema())
-    accident = data.results.region_list[0].pok_list[0].result.dtpcardlist.info_dtp[0]
+    try:
+        data = Root.model_validate(raw_json)
+        # pprint(Root.model_json_schema())
+        accident = data.results.region_list[0].pok_list[0].result.dtpcardlist.info_dtp[0]
+        
+
+        print("\033[1;93mAccident coords:\033[0m", accident.coord_l, accident.coord_w)
+
+        print("\033[1;93m\nAccident vehicals (ts) data:\033[0m") 
+        for accident_ts in accident.ts_info:
+            pprint(accident_ts.model_dump())
+
+        print("\033[1;93m\nAccident full info (info_dtp) as Pydantic schema:\033[0m") 
+        pprint(accident)
+    except pydantic_core._pydantic_core.ValidationError:
+        logger.warning("Файл не парсится.")
     
-
-    print("\033[1;93mAccident coords:\033[0m", accident.coord_l, accident.coord_w)
-
-    print("\033[1;93m\nAccident vehicals (ts) data:\033[0m") 
-    for accident_ts in accident.ts_info:
-        pprint(accident_ts.model_dump())
-
-    print("\033[1;93m\nAccident full info (info_dtp) as Pydantic schema:\033[0m") 
-    pprint(accident)
-    
-    print("\033[1;93m\nAccident full info (info_dtp) as raw json:\033[0m") 
-    pprint(raw_json['results']['region_list'][0]['pok_list'][0]['result'][0]['dtpcardlist']['info_dtp'][0])
+    try:
+        print("\033[1;93m\nAccident full info (info_dtp) as raw json:\033[0m") 
+        pprint(raw_json['results']['region_list'][0]['pok_list'][0]['result'][0]['dtpcardlist']['info_dtp'][0])
+    except KeyError:
+        logger.warning("Нарушена структура файла")
 
     print("\033[1;93m\nFull raw json info and structure:\033[0m") 
     print_structure(raw_json)
@@ -209,10 +215,11 @@ def main():
     # TODO attribution_removed = remove_attribution_line(out_path, target="attribution")  # удаляет подписи фреймворков с карты
     out_path = Path(output_file)
     m.save(str(out_path))
+    m.save('/home/xgb/projects/rollermap/bike-collisions/index.html')
     logger.info("Карта сохранена: %s", out_path)
     webbrowser.open(output_file)
     
 
 if __name__ == "__main__":
-    # schema_investigation('data_msk/msk_2015-1.json')
-    main()
+    schema_investigation('data_msk/msk_2021-10.json')
+    # main()
