@@ -18,4 +18,4 @@ heatmap.py
 http://стат.гибдд.рф/opendataapi/v1/dictionary/rows?code=1
 
 ## Пример запроса к стат.гибдд.рф
-http://стат.гибдд.рф/opendataapi/v1/kartdtp/rows?pok=39,119,131,110&dat=3.2026&reg=1145,1146
+http://стат.гибдд.рф/opendataapi/v1/kartdtp/rows?pok=39,119,131,110&dat=7.2016&reg=1145,1146

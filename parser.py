@@ -10,9 +10,10 @@ from time import sleep
 # import folium
 # from folium.plugins import HeatMap
 import requests
+from requests.exceptions import RequestException
 # from dateutil import relativedelta
 
-from custom_exceptions import DateRangeError
+from custom_exceptions import DateRangeError, ParseError
 from schemas import Root
 
 
@@ -38,7 +39,7 @@ def check_categories(params):
     categories = []
     for row in dict_rows:
         if int(row.get('rows_code')) in params['pok']:
-            categories.append(row.get('rows_name'))
+            categories.append(f"{row.get('rows_code')}: {row.get('rows_name')}")
         if "вело" in row.get('rows_name') and int(row.get('rows_code')) not in params['pok']:
             logger.warning("Обнаружен новый код для вело: %s, %s", int(row.get('rows_code')), row.get('rows_name'))
     logger.info("Имеются категории:\n\t- %s ", '\n\t- '.join(categories))
@@ -69,6 +70,19 @@ def generate_dates(start_date, end_date):
             year += 1
     return dates
 
+def fetch_and_save(url, params, filepath, logger):
+    """Выполняет запрос, сохраняет JSON в файл. Возвращает bool: успех или нет."""
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # бросает HTTPError при 4xx/5xx
+        data = response.json()
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return True
+    except RequestException as e:
+        logger.warning("Ошибка запроса для %s: %s", params, e)
+        return False
+        
 def parser(params, start_date, end_date):
     """Парсит данные c сайта стат.гибдд.рф с заданными params в диапазоне указанных дат."""
 
@@ -84,38 +98,55 @@ def parser(params, start_date, end_date):
     params['reg'] = ','.join((str(i) for i in params['reg']))
     exist_files = os.listdir('data_msk')
     logger.debug("exist_files: %s", sorted(exist_files))
+    broken_files = []
     for date in dates:
-        name = "-".join(date.split('.')[::-1])
-        if f"msk_{name}.json" in exist_files:
+        name = "-".join(date.split('.')[::-1])  # DD.MM.YYYY -> YYYY-MM-DD
+        main_file = f"msk_{name}.json"
+        
+        if main_file in exist_files:
             continue
-        try:   
-            response = requests.get(url, params=params | {'dat': date})
-            data = response.json()
-            with open(f"data_msk/msk_{name}.json", "w") as f:
-                json.dump(data, f)
-            logger.info("Успешный ответ стат.гибдд.рф для %s", date)
-        except requests.exceptions.RequestException as e:
-            logger.warning("Ошибка запроса:", e)
-            regs = params['reg'].split(',')
-            logger.debug("Расщепляем регионы %s для даты %s", regs, date)
-            for reg in regs:
-                if f"msk_{name}_{reg}.json" in exist_files:
-                    continue
-                params_reg = params.copy()
-                params_reg['reg'] = reg
-                try:
-                    response = requests.get(url, params=params_reg)
-                    data = response.json()
-                    with open(f"data_msk/msk_{name}_{reg}.json", "w") as f:
-                        json.dump(data, f)
-                    logger.info("Успешный ответ стат.гибдд.рф для даты %s и региона %s", date, reg)
-                except requests.exceptions.RequestException as e:
-                    logger.warning("Снова шибка запроса:", e)
-        except Exception as e:
-            logger.exception("Ошибка парсинга: %s", e)      
-            raise
-        sleep(5)
 
+        # Попытка получить данные по всем регионам сразу
+        params_full = params | {'dat': date} 
+        if fetch_and_save(url, params_full, "data_msk/" + main_file, logger):
+            logger.info("Успешный ответ для %s (все регионы)", date)
+            continue
+
+        # Если не вышло — Уровень 2: пробуем по каждому региону отдельно
+        broken_files.append(main_file)
+        regions = params_full['reg'].split(',')
+        params_reg = params_full.copy()
+
+        logger.debug("Расщепляем регионы %s для даты %s", regions, date)
+        
+        for reg in regions:
+            reg_file = f"msk_{name}_{reg}.json"
+            if reg_file in exist_files:
+                continue
+    
+            params_reg['reg'] = reg        
+            if fetch_and_save(url, params_reg, reg_file, logger):
+                logger.info("Успешный ответ для даты %s и региона %s", date, reg)
+            else:
+                #  Уровень 3: пробуем по каждому pok внутри этого региона
+                broken_files.append(reg_file)
+                pok_list = params_reg['pok'].split(',')
+                params_pok = params_reg.copy()
+                logger.debug("Расщепляем регион %s на pok: %s", reg, pok_list)
+                for pok in pok_list:
+                    pok_file = f"msk_{name}_{reg}_pok_{pok}.json"
+                    if pok_file in exist_files:
+                        continue
+                    params_pok['pok'] = pok
+                    if fetch_and_save(url, params_pok, "data_msk/" + pok_file, logger):
+                        logger.info("Успех для даты %s, регион %s, pok %s", date, reg, pok)
+                    else:
+                        broken_files.append(pok_file)
+                        logger.warning("Не удалось получить данные для ПОК %s региона %s", pok, reg)
+                    sleep(1)
+            sleep(1)
+        sleep(1)
+    logger.debug("broken_files: \n%s", "\n".join(broken_files))
 
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)

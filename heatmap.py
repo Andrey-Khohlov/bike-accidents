@@ -221,5 +221,5 @@ def main():
     
 
 if __name__ == "__main__":
-    schema_investigation('data_msk/msk_2021-10.json')
-    # main()
+    # schema_investigation('data_msk/msk_2021-10.json')
+    main()

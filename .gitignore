@@ -2,9 +2,15 @@
 .venv/
 /.env
 /.idea/
-/data/
-/data_temp/
-/data_msk/
-/__pycache__/
+__pycache__/
+__pycache__/custom_exceptions.cpython-310.pyc
+
+data/
+data_temp/
+data_msk/
+data_cfo/500.md
+data*/
+
 
 backlog.md
+heatmap.py
