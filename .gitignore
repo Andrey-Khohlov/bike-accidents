@@ -3,7 +3,8 @@
 /.env
 /.idea/
 __pycache__/
-__pycache__/custom_exceptions.cpython-310.pyc
+.ipynb_checkpoints/
+
 
 data/
 data_temp/
@@ -14,3 +15,4 @@ data*/
 
 backlog.md
 heatmap.py
+

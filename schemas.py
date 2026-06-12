@@ -92,7 +92,7 @@ class PokItem(BaseModel):
             raise ValueError(f'result должен содержать ровно 1 элемент, получено {len(v)}')
         return v[0]  # теперь result становится одиночным объектом
 
-    # TODO Написать тест на проверку условия len != 1
+    # TODO Написать тест на проверку условия len <= 1
 
 # ---------- Регион (region_list) ----------
 class RegionItem(BaseModel):
