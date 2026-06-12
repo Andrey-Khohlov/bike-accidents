@@ -95,7 +95,7 @@ def main():
     files = os.listdir(directory)
     for file in files:
         if file.split('.')[-1] != 'json':
-            logger.info("В директории данных %s найден посторонний файл %s", directory, file)
+            logger.info("В директории данных %s найден не json файл %s", directory, file)
             continue
         with open(f'{directory}/{file}', 'r', encoding='utf-8') as f:
             raw_json = json.load(f)
@@ -110,7 +110,9 @@ def main():
                 for accident in pok.result.dtpcardlist.info_dtp:
                     points.append((accident.coord_w, accident.coord_l))
     logger.info("Обнаружено %s точек ДТП.", f"{len(points):,d}")
-    logger.info("Невалидные файлы:\n%s", "\n".join(sorted(corrupted_files)))
+    if corrupted_files:
+        logger.info("Невалидные файлы:\n%s", "\n".join(sorted(corrupted_files)))
+
     center = (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
     m = folium.Map(
         location=center,
@@ -120,21 +122,21 @@ def main():
     )
     HeatMap(
         points,
-        max_zoom=18,
-        radius=10,
-        blur=10,
+        min_opacity = 0.5,
+        max_zoom=10,
+        radius=7,
+        blur=1,
     ).add_to(m)
 
     template_path = Path("templates/file_uploader.js")
     js_code = template_path.read_text(encoding="utf-8")
     m.get_root().html.add_child(folium.Element(js_code))
 
-    output_file ='index.html'
     # TODO attribution_removed = remove_attribution_line(out_path, target="attribution")  # удаляет подписи фреймворков с карты
-    out_path = Path(output_file)
-    m.save(str(out_path))
-    m.save('/home/xgb/projects/rollermap/bike-collisions/index.html')
-    logger.info("Карта сохранена: %s", out_path)
+
+    output_file = '/home/xgb/projects/rollermap/bike-collisions/index.html'
+    m.save(output_file)
+    logger.info("Карта сохранена: %s", output_file)
     webbrowser.open(output_file)
     
 
