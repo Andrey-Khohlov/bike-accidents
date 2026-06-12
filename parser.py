@@ -1,19 +1,12 @@
-# from copy import deepcopy
 import json
 import logging
 import os
 import sys
-# from datetime import datetime
-# from pprint import pprint
 from time import sleep
-
-# import folium
-# from folium.plugins import HeatMap
 import requests
 from requests.exceptions import RequestException
-# from dateutil import relativedelta
 
-from custom_exceptions import DateRangeError, ParseError
+from custom_exceptions import DateRangeError
 from schemas import Root
 
 
