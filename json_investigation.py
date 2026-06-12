@@ -1,6 +1,7 @@
 
 import json
 import logging
+import os
 from pprint import pprint
 import sys
 
@@ -35,8 +36,8 @@ def schema_investigation(file):
 
         print("\033[1;93m\nAccident full info (info_dtp) as Pydantic schema:\033[0m") 
         pprint(accident)
-    except pydantic_core._pydantic_core.ValidationError:
-        logger.warning("Файл не парсится.")
+    except Exception as e:
+        logger.warning("Файл не парсится: %s", e)
     
     try:
         print("\033[1;93m\nAccident full info (info_dtp) as raw json:\033[0m") 
@@ -79,6 +80,29 @@ def print_structure(data, indent=0, max_depth=10):
     else:
         print(repr(data)[:100])
 
+def group_files_analysis():
+    directory = 'data_msk'
+    files = [x for x in os.listdir(directory) if x.endswith('json')]
+    files.sort(key=lambda x: tuple(map(int, x.split('.')[0].split('_')[1].split('-'))))
+    logger.debug("files: %s", files)
+    for file in files:
+        with open(directory + "/" + file, 'r', encoding='utf-8') as f:
+            raw_json = json.load(f)
+        try:
+            data = Root.model_validate(raw_json)
+            accidents = data.results.region_list[0].pok_list[0].result.dtpcardlist.info_dtp
+        except Exception as e:
+            logger.warning("Wrong file %s: %s", file, e )
+
+        info_dtp_len = 0  
+        try:
+            for region in data.results.region_list:
+                for pok in region.pok_list:
+                    info_dtp_len += len(pok.result.dtpcardlist.info_dtp)
+        except Exception as e:
+            logger.warning("Wrong file structure %s: %s", file, e )
+        logger.info("Файл %s имеет кол-во полей инфо: %s", file, info_dtp_len)
 
 if __name__ == "__main__":
-    schema_investigation('data_msk/msk_2021-10.json')
+    # schema_investigation('data_msk/msk_2026-5.json')
+    group_files_analysis()

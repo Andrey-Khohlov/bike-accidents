@@ -6,11 +6,13 @@ from time import sleep
 import requests
 from requests.exceptions import RequestException
 
+from tqdm import tqdm
+
 from custom_exceptions import DateRangeError
 from schemas import Root
 
 
-logging.basicConfig(level = logging.DEBUG,
+logging.basicConfig(level = logging.INFO,
                     format= "[%(levelname)s] [%(name)s] %(message)s",
                     handlers=[logging.StreamHandler(sys.stderr)]
                     )                    
@@ -73,7 +75,7 @@ def fetch_and_save(url, params, filepath, logger):
             json.dump(data, f, ensure_ascii=False, indent=2)
         return True
     except RequestException as e:
-        logger.warning("Ошибка запроса для %s: %s", params, e)
+        logger.debug("Ошибка запроса для %s: %s", params, e)
         return False
         
 def parser(params, start_date, end_date):
@@ -89,10 +91,14 @@ def parser(params, start_date, end_date):
         raise
     params['pok'] = ','.join((str(i) for i in params['pok']))
     params['reg'] = ','.join((str(i) for i in params['reg']))
+    
+    exist_files = [x for x in os.listdir('data_msk') if x.endswith('json')]
+    exist_files.sort(key=lambda x: tuple(map(int, x.split('.')[0].split('_')[1].split('-'))))
+    logger.debug("exist_files: %s", exist_files)
     exist_files = os.listdir('data_msk')
-    logger.debug("exist_files: %s", sorted(exist_files))
+
     broken_files = []
-    for date in dates:
+    for date in tqdm(dates):
         name = "-".join(date.split('.')[::-1])  # DD.MM.YYYY -> YYYY-MM-DD
         main_file = f"msk_{name}.json"
         
@@ -118,7 +124,7 @@ def parser(params, start_date, end_date):
                 continue
     
             params_reg['reg'] = reg        
-            if fetch_and_save(url, params_reg, reg_file, logger):
+            if fetch_and_save(url, params_reg, "data_msk/" + reg_file, logger):
                 logger.info("Успешный ответ для даты %s и региона %s", date, reg)
             else:
                 #  Уровень 3: пробуем по каждому pok внутри этого региона
@@ -135,11 +141,11 @@ def parser(params, start_date, end_date):
                         logger.info("Успех для даты %s, регион %s, pok %s", date, reg, pok)
                     else:
                         broken_files.append(pok_file)
-                        logger.warning("Не удалось получить данные для ПОК %s региона %s", pok, reg)
-                    sleep(1)
-            sleep(1)
-        sleep(1)
-    logger.debug("broken_files: \n%s", "\n".join(broken_files))
+                        logger.debug("Не удалось получить данные для pok %s региона %s", pok, reg)
+        #             sleep(1)
+        #     sleep(1)
+        # sleep(1)
+    logger.info("Не удалось получить данные для: \n%s", "\n".join(broken_files))
 
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
