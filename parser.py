@@ -155,7 +155,7 @@ def main():
     'reg': [1145, 1146]
     }
     check_categories(params)
-    parser(params, start_date='1.2015', end_date='5.2026')
+    # parser(params, start_date='1.2015', end_date='5.2026')
 
 
 if __name__ == "__main__":

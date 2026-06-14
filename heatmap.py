@@ -18,6 +18,38 @@ logging.basicConfig(level = logging.DEBUG,
                     )                    
 logger = logging.getLogger(__name__)
 
+def remove_attribution_line(file_path: str | Path, target: str = "attribution", encoding: str = "utf-8") -> bool:
+    """
+    Удаляет строки, содержащие target, из файла.
+    Добавляет "attributionControl": false после строки с "preferCanvas": false,.
+    """
+    path = Path(file_path)
+    if not path.is_file():
+        logger.warning("Файл не найден: %s", path)
+        return False
+    try:
+        lines = path.read_text(encoding=encoding).splitlines(keepends=True)
+    except OSError as e:
+        logger.warning("Ошибка при чтении файла: %s", e)
+        return False
+    new_lines = [line for line in lines if target not in line]
+    if len(new_lines) == len(lines):
+        logger.warning("Строка с attribution не найдена. Файл не изменён.")
+    out: list[str] = []
+    prefer_found = False
+    for line in new_lines:
+        out.append(line)
+        if "preferCanvas" in line:
+            out.append('  "attributionControl": false, \n')
+            prefer_found = True
+    if not prefer_found:
+        logger.warning('Строка с preferCanvas не найдена. "attributionControl": false не добавлен.')
+    try:
+        path.write_text("".join(out), encoding=encoding)
+        return True
+    except OSError as e:
+        logger.warning("Ошибка при записи файла: %s", e)
+        return False
 
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
@@ -62,17 +94,16 @@ def main():
     ).add_to(m)
 
     for file in os.listdir('templates'):
-        if file.endswith('.js'):
+        if file.endswith('.js') or file.endswith('.html'):
             template_path = Path(f"templates/{file}")
             js_code = template_path.read_text(encoding="utf-8")
             m.get_root().html.add_child(folium.Element(js_code))
     
-
-    # TODO attribution_removed = remove_attribution_line(out_path, target="attribution")  # удаляет подписи фреймворков с карты
-
     output_file = '/home/xgb/projects/rollermap/bike-hitting/index.html'
     m.save(output_file)
     logger.info("Карта сохранена: %s", output_file)
+    attribution_removed = remove_attribution_line(output_file, target="attribution")  # удаляет подписи фреймворков с карты
+    logger.debug("Постобработка attribution для %s: %s", output_file, attribution_removed)
     webbrowser.open(output_file)
     
 
