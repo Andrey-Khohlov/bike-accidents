@@ -9,8 +9,6 @@ parser.py
 ## Построение карты
 heatmap.py
 
-Карта выдается в файле index.html
-
 
 ## Справочник регионов
 http://стат.гибдд.рф/opendataapi/v1/dictionary/rows?code=1
@@ -23,4 +21,7 @@ http://стат.гибдд.рф/
 https://dtp-stat.ru/
 https://velo-1.ru/kak-sbivayut-velosipedistov-dtp-velosipedistov-video-i-tekst?ysclid=mqb8dinp1388009886
 https://habr.com/ru/articles/354782/
+https://pikabu.ru/story/dorozhnotransportnaya_avariynost_2024_velo_12648115?ysclid=mqe1o9a0of555633660
+https://mobilitika.ru/console/safety/map/
+
 

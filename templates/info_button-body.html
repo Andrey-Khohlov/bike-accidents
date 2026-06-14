@@ -1,0 +1,126 @@
+
+<!-- Кнопка «❓» слева внизу -->
+<div id="help-button" style="
+    position: fixed;
+    bottom: 6px;
+    left: 4px;
+    z-index: 999;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+">
+    <button id="openHelpBtn"
+            style="cursor: pointer; font-weight: bold; color: #333; margin: 0; padding: 2px 6px; line-height: 1.1; border-radius: 4px; border: 1px solid #ccc; background: #fff;">
+        <span style="margin-right: 4px;">❓</span>
+    </button>
+</div>
+
+<!-- Модальное окно с инструкцией (скрыто по умолчанию) -->
+<div id="helpModal" style="
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+">
+    <div style="
+        background-color: #fefefe;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        border-radius: 8px;
+        position: relative;
+        margin: 5vh auto;
+    ">
+        <span id="closeModalBtn" style="
+            color: #aaa;
+            float: right;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        ">&times;</span>
+        <h1><strong>Тепловая карта наездов на велосипедистов</strong> </h1>
+        <p>Для регионов: Москва и Московская область.</p>
+        <p>За период 01.2015 - 05.2026.</p>
+        <h5>Что это за карта?</h5>
+        <p>Это бесплатный инструмент для велосипедистов, который превращает сухую статистику Госавтоинспекции в понятную навигацию - настоящий <span>вело-навигатор по аварийности</span>. Мы взяли официальные <span>открытые данные ГИБДД о ДТП</span> (<a href="http://стат.гибдд.рф/" target="_blank" rel="noopener noreferrer">http://стат.гибдд.рф/</a>), нанесли на карту все зарегистрированные за последние годы <span>наезды на велосипедистов</span> и добавили функцию загрузки Вашего личного трека, чтобы Вы могли <span>проверить трек по данным ГИБДД</span>.</p>
+
+        <h5>Как это работает?</h5>
+        <p>Вы экспортируете свой привычный трек из приложения (Strava, Яндекс Карты, Garmin). Затем загружаете GPX-файл на <span>карту ДТП Россия</span> и можете провести <span>GPX анализ опасных участков</span> вдоль всего маршрута.</p>
+
+        <h5>Зачем это нужно?</h5>
+        <p>Вы думаете, что знаете свой район? Данные ГИБДД часто это опровергают. Перекресток, который кажется удобным, может быть «чемпионом» по наездам, но вы об этом не знали, пока не увидите маркеры на карте. Наложение трека на историю ДТП позволяет выделить опасные участки и проложить <span>безопасный веломаршрут</span>. Это инструмент, чтобы понять <span>как избежать ДТП на велосипеде</span>.</p>
+
+        <p>С помощью этой карты вы сможете:</p>
+        <ul>
+        <li>Сравнить варианты велопоездки и <span>выбрать дорогу для велосипеда</span> где меньше прошлых ДТП.</li>
+        <li>Понять, какие улицы в вашем городе - зоны реального риска, опираясь на <span>статистику аварий с велосипедистами</span>.</li>
+        <li>Успокоить близких: «Я выбрал маршрут, где за 3 года не было ни одного наезда».</li>
+        </ul>
+
+        <h5>Откуда данные?</h5>
+        <p>Источник: открытый портал данных ГИБДД РФ (<a href="http://стат.гибдд.рф/" target="_blank" rel="noopener noreferrer">http://стат.гибдд.рф/</a>). Мы используем агрегированные сведения о происшествиях, где код показателя аварийности содержит упоминие велосипедиста. Данные обезличены, но полностью достоверны с точки зрения геокоординат.</p>
+
+        <h5>Насколько точен анализ?</h5>
+        <p>Важно понимать, что карта показывает прошлые происшествия. Это не предсказание будущего, а статистический паттерн. Если на отрезке было 10 наездов — значит, там системная проблема (плохая видимость, отсутствие инфраструктуры, агрессивный трафик). Игнорировать такую историю рискованно.</p>
+
+        <h5>Как загрузить свой трек (пошагово)</h5>
+        <ol>
+        <li>Запишите поездку через любое приложение (даже просто включите запись в Google Fit).</li>
+        <li>Экспортируйте трек в формате GPX (это есть в настройках большинства вело-компьютеров).</li>
+        <li>Нажмите на кнопку «Выберете файл» («Choose file») на карте (в правом верхнем углу).</li>
+        <li>Круглые маркеры - те самые точки столкновений. Если их слишком много, попробуйте сместить маршрут на соседнюю улицу.</li>
+        </ol>
+
+        <h5>Кому это пригодится в первую очередь?</h5>
+        <ul>
+        <li>Городским велокоммьютерам (поездки на работу).</li>
+        <li>Туристам в незнакомом городе.</li>
+        <li>Активистам и урбанистам — для визуализации аварийности на карте районов.</li>
+        </ul>
+        <p><strong>Что-нибудь спросить</strong>  - <a href="mailto:bike-hitting@ya.ru" style="white-space: nowrap;">bike-hitting@ya.ru</a> </p>
+    </div>
+</div>
+
+<script>
+    // Эффекты наведения для кнопки «Помощь» (как у ваших кнопок справа)
+    const helpBtnDiv = document.getElementById('help-button');
+    helpBtnDiv.addEventListener('mouseenter', function() {
+        this.style.background = '#f8f9fa';
+        this.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+    });
+    helpBtnDiv.addEventListener('mouseleave', function() {
+        this.style.background = 'white';
+        this.style.boxShadow = '0 0 5px grey';
+    });
+
+    // Открытие модального окна при клике на кнопку
+    const openBtn = document.getElementById('openHelpBtn');
+    const modal = document.getElementById('helpModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+
+    openBtn.onclick = function() {
+        modal.style.display = 'flex';
+    }
+
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    // Закрытие при клике на затемнённую область
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>

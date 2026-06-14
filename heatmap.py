@@ -93,11 +93,16 @@ def main():
         blur=1,
     ).add_to(m)
 
-    for file in os.listdir('templates'):
+    for file in sorted(os.listdir('templates')):
         if file.endswith('.js') or file.endswith('.html'):
             template_path = Path(f"templates/{file}")
             js_code = template_path.read_text(encoding="utf-8")
-            m.get_root().html.add_child(folium.Element(js_code))
+            if 'body' in file:
+                m.get_root().html.add_child(folium.Element(js_code))
+            elif 'header' in file:
+                m.get_root().header.add_child(folium.Element(js_code))
+            else:
+                logger.warning("Наименование файла %s должно содержать 'header' или 'body'", file)
     
     output_file = '/home/xgb/projects/rollermap/bike-hitting/index.html'
     m.save(output_file)
