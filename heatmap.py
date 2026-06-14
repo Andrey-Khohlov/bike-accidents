@@ -61,13 +61,16 @@ def main():
         blur=1,
     ).add_to(m)
 
-    template_path = Path("templates/file_uploader.js")
-    js_code = template_path.read_text(encoding="utf-8")
-    m.get_root().html.add_child(folium.Element(js_code))
+    for file in os.listdir('templates'):
+        if file.endswith('.js'):
+            template_path = Path(f"templates/{file}")
+            js_code = template_path.read_text(encoding="utf-8")
+            m.get_root().html.add_child(folium.Element(js_code))
+    
 
     # TODO attribution_removed = remove_attribution_line(out_path, target="attribution")  # удаляет подписи фреймворков с карты
 
-    output_file = '/home/xgb/projects/rollermap/bike-collisions/index.html'
+    output_file = '/home/xgb/projects/rollermap/bike-hitting/index.html'
     m.save(output_file)
     logger.info("Карта сохранена: %s", output_file)
     webbrowser.open(output_file)
