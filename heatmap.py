@@ -50,30 +50,51 @@ def remove_attribution_line(file_path: str | Path, target: str = "attribution", 
     except OSError as e:
         logger.warning("Ошибка при записи файла: %s", e)
         return False
-
+def bbox(reg, coord_w, coord_l):
+    """Определяет сто точка в границах прямоугольника reg"""
+    if reg in ("msk", "cfo"):
+        min_w, max_w = 49.6, 59.1
+        min_l, max_l = 31.5, 47.6
+    else:
+        logger.warning("Регион задан не верно, %s", reg)
+        raise
+    return (min_w < coord_w < max_w ) and (min_l < coord_l < max_l)
+        
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
     
     points = []
     corrupted_files = []
-    directory = 'data_msk/'
-    files = os.listdir(directory)
-    for file in files:
-        if file.split('.')[-1] != 'json':
-            logger.info("В директории данных %s найден не json файл %s", directory, file)
-            continue
-        with open(f'{directory}/{file}', 'r', encoding='utf-8') as f:
-            raw_json = json.load(f)
-        try:
-            data = Root.model_validate(raw_json)  # Парсим в Pydantic-модель
-        except pydantic_core._pydantic_core.ValidationError as e:
-            corrupted_files.append(file)
-            logger.debug("Corrupted file %s, %s", file, e)
-        # dtp_list = data.results.region_list[0].pok_list[0].result.dtpcardlist.info_dtp
-        for region in data.results.region_list:
-            for pok in region.pok_list:
-                for accident in pok.result.dtpcardlist.info_dtp:
-                    points.append((accident.coord_w, accident.coord_l))
+    directories = ['data_msk/', 'data_cfo/']
+    for directory in directories:
+        files = os.listdir(directory)
+        for file in files:
+            if file.split('.')[-1] != 'json':
+                logger.info("В директории данных %s найден не json файл %s", directory, file)
+                continue
+            with open(f'{directory}/{file}', 'r', encoding='utf-8') as f:
+                raw_json = json.load(f)
+            try:
+                data = Root.model_validate(raw_json)  # Парсим в Pydantic-модель
+            except pydantic_core._pydantic_core.ValidationError as e:
+                corrupted_files.append(file)
+                logger.debug("Corrupted file %s, %s", file, e)
+            # dtp_list = data.results.region_list[0].pok_list[0].result.dtpcardlist.info_dtp
+            for region in data.results.region_list:
+                for pok in region.pok_list:
+                    for accident in pok.result.dtpcardlist.info_dtp:
+                        region_ = file.split("_")[0] 
+                        if region_ in ("msk", "cfo") and accident.coord_w < accident.coord_l:
+                            if not bbox(region_, accident.coord_l, accident.coord_w):
+                                logger.debug("Точка %s за пределами области %s, file %s", (accident.coord_l, accident.coord_w), region.reg_code, file)
+                                continue
+                            logger.debug("coord_w < coord_l для reg: %s, point: %s, file: %s", region.reg_code, (accident.coord_w, accident.coord_l), file)
+                            points.append((accident.coord_l, accident.coord_w))
+                        else:
+                            if not bbox(region_, accident.coord_w, accident.coord_l):
+                                logger.debug("Точка %s за пределами области %s, file %s", (accident.coord_w, accident.coord_l), region.reg_code, file)
+                                continue
+                            points.append((accident.coord_w, accident.coord_l))
     logger.info("Обнаружено %s точек ДТП.", f"{len(points):,d}")
     if corrupted_files:
         logger.info("Невалидные файлы:\n%s", "\n".join(sorted(corrupted_files)))

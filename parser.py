@@ -78,10 +78,11 @@ def fetch_and_save(url, params, filepath, logger):
         logger.debug("Ошибка запроса для %s: %s", params, e)
         return False
         
-def parser(params, start_date, end_date):
+def parser(pok, reg, okrug, start_date, end_date, path):
     """Парсит данные c сайта стат.гибдд.рф с заданными params в диапазоне указанных дат."""
 
     logger.info("Парсим данные.")
+    
     url = "http://стат.гибдд.рф/opendataapi/v1/kartdtp/rows"
     data = None
     try:
@@ -89,25 +90,26 @@ def parser(params, start_date, end_date):
     except DateRangeError as e:
         logger.exception(e)
         raise
-    params['pok'] = ','.join((str(i) for i in params['pok']))
-    params['reg'] = ','.join((str(i) for i in params['reg']))
+    params = dict()
+    params['pok'] = ','.join((str(i) for i in pok))
+    params['reg'] = ','.join((str(i) for i in reg))
     
-    exist_files = [x for x in os.listdir('data_msk') if x.endswith('json')]
+    exist_files = [x for x in os.listdir(path) if x.endswith('json')]
     exist_files.sort(key=lambda x: tuple(map(int, x.split('.')[0].split('_')[1].split('-'))))
     logger.debug("exist_files: %s", exist_files)
-    exist_files = os.listdir('data_msk')
+    exist_files = os.listdir(path)
 
     broken_files = []
     for date in tqdm(dates):
         name = "-".join(date.split('.')[::-1])  # DD.MM.YYYY -> YYYY-MM-DD
-        main_file = f"msk_{name}.json"
+        main_file = f"{okrug}_{name}.json"
         
         if main_file in exist_files:
             continue
 
         # Попытка получить данные по всем регионам сразу
         params_full = params | {'dat': date} 
-        if fetch_and_save(url, params_full, "data_msk/" + main_file, logger):
+        if fetch_and_save(url, params_full, path + "/" + main_file, logger):
             logger.info("Успешный ответ для %s (все регионы)", date)
             continue
 
@@ -119,12 +121,12 @@ def parser(params, start_date, end_date):
         logger.debug("Расщепляем регионы %s для даты %s", regions, date)
         
         for reg in regions:
-            reg_file = f"msk_{name}_{reg}.json"
+            reg_file = f"{okrug}_{name}_{reg}.json"
             if reg_file in exist_files:
                 continue
     
             params_reg['reg'] = reg        
-            if fetch_and_save(url, params_reg, "data_msk/" + reg_file, logger):
+            if fetch_and_save(url, params_reg, path + "/" + reg_file, logger):
                 logger.info("Успешный ответ для даты %s и региона %s", date, reg)
             else:
                 #  Уровень 3: пробуем по каждому pok внутри этого региона
@@ -133,29 +135,72 @@ def parser(params, start_date, end_date):
                 params_pok = params_reg.copy()
                 logger.debug("Расщепляем регион %s на pok: %s", reg, pok_list)
                 for pok in pok_list:
-                    pok_file = f"msk_{name}_{reg}_pok_{pok}.json"
+                    pok_file = f"{okrug}_{name}_{reg}_pok_{pok}.json"
                     if pok_file in exist_files:
                         continue
                     params_pok['pok'] = pok
-                    if fetch_and_save(url, params_pok, "data_msk/" + pok_file, logger):
+                    if fetch_and_save(url, params_pok, path + "/" + pok_file, logger):
                         logger.info("Успех для даты %s, регион %s, pok %s", date, reg, pok)
                     else:
                         broken_files.append(pok_file)
                         logger.debug("Не удалось получить данные для pok %s региона %s", pok, reg)
-        #             sleep(1)
-        #     sleep(1)
-        # sleep(1)
-    logger.info("Не удалось получить данные для: \n%s", "\n".join(broken_files))
+                    sleep(1)
+            sleep(2)
+        sleep(5)
+    if broken_files:
+        logger.info("Не удалось получить данные для: \n%s", "\n".join(broken_files))
+    else:
+        logger.info("Все запланированные файлы получены успешно.")
 
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
+
+    pok = [39, 119, 131, 110]
+    reg_msk = [1145, 1146],  # мск и обл
+    reg_cfo = [
+        1114,  # 1 Белгородская область
+        1115,  # 2 Брянская область
+        1117,  # 3 Владимирская область
+        1120,  # 4 Воронежская область
+        1124,  # 5 Ивановская область
+        1129,  # 6 Калужская область
+        1134,  # 7 Костромская область
+        1138,  # 8 Курская область
+        1142,  # 9 Липецкая область
+        1154,  # 11 Орловская область
+        1161,  # 12 Рязанская область
+        1166,  # 13 Смоленская область
+        1168,  # 14 Тамбовская область
+        1128,  # 15 Тверская область
+        1170,  # 16 Тульская область
+        1178,  # 17 Ярославская область
+    ]  # ЦФО: 
     
     params = {
     'pok': [39, 119, 131, 110],
-    'reg': [1145, 1146]
+    # 'reg': [1145, 1146],  # мск и обл
+    'reg': [
+        1114,  # 1 Белгородская область
+        1115,  # 2 Брянская область
+        1117,  # 3 Владимирская область
+        1120,  # 4 Воронежская область
+        1124,  # 5 Ивановская область
+        1129,  # 6 Калужская область
+        1134,  # 7 Костромская область
+        1138,  # 8 Курская область
+        1142,  # 9 Липецкая область
+        1154,  # 11 Орловская область
+        1161,  # 12 Рязанская область
+        1166,  # 13 Смоленская область
+        1168,  # 14 Тамбовская область
+        1128,  # 15 Тверская область
+        1170,  # 16 Тульская область
+        1178,  # 17 Ярославская область
+    ]  # ЦФО: 
     }
     check_categories(params)
-    # parser(params, start_date='1.2015', end_date='5.2026')
+    # parser(pok=pok, reg=reg_msk, okrug='msk', start_date='1.2015', end_date='5.2026', path='data_msk')
+    parser(pok=pok, reg=reg_cfo, okrug='cfo', start_date='1.2015', end_date='5.2026', path='data_cfo')
 
 
 if __name__ == "__main__":
