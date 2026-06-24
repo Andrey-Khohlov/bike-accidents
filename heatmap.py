@@ -64,8 +64,12 @@ def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
     
     points = []
+    geojson_features = []
     corrupted_files = []
-    directories = ['data_msk/', 'data_cfo/']
+    directories = [
+        'data_msk/', 
+        'data_cfo/', 
+        ]
     for directory in directories:
         files = os.listdir(directory)
         for file in files:
@@ -85,33 +89,46 @@ def main():
                     for accident in pok.result.dtpcardlist.info_dtp:
                         region_ = file.split("_")[0] 
                         if region_ in ("msk", "cfo") and accident.coord_w < accident.coord_l:
-                            if not bbox(region_, accident.coord_l, accident.coord_w):
-                                logger.debug("Точка %s за пределами области %s, file %s", (accident.coord_l, accident.coord_w), region.reg_code, file)
-                                continue
+                            accident.coord_w, accident.coord_l = accident.coord_l, accident.coord_w
                             logger.debug("coord_w < coord_l для reg: %s, point: %s, file: %s", region.reg_code, (accident.coord_w, accident.coord_l), file)
-                            points.append((accident.coord_l, accident.coord_w))
-                        else:
-                            if not bbox(region_, accident.coord_w, accident.coord_l):
-                                logger.debug("Точка %s за пределами области %s, file %s", (accident.coord_w, accident.coord_l), region.reg_code, file)
-                                continue
-                            points.append((accident.coord_w, accident.coord_l))
+                        if not bbox(region_, accident.coord_w, accident.coord_l):
+                            logger.debug("Точка %s за пределами области %s, file %s, empt_number: %s", (accident.coord_w, accident.coord_l), region.reg_code, file, accident.empt_number)
+                            continue
+                        points.append((accident.coord_w, accident.coord_l))
+                        geojson_features.append({
+                            "type": "Feature",
+                            "geometry": {"type": "Point", "coordinates": [accident.coord_l, accident.coord_w]},
+                            "properties": {"file": file, "addr": f"{accident.dor}, {accident.np}, {accident.street}, {accident.house}", "coords": f"{accident.empt_number}: {accident.coord_l}, {accident.coord_w}"}
+                        })
+    geojson_data = {"type": "FeatureCollection", "features": geojson_features}
     logger.info("Обнаружено %s точек ДТП.", f"{len(points):,d}")
     if corrupted_files:
         logger.info("Невалидные файлы:\n%s", "\n".join(sorted(corrupted_files)))
 
-    center = (sum(p[0] for p in points) / len(points), sum(p[1] for p in points) / len(points))
+    center = (55.755790, 37.620038)
     m = folium.Map(
         location=center,
-        tiles="CartoDB Voyager",
-        zoom_start=11,
+        # tiles="CartoDB Voyager",
+        tiles = "OpenStreetMap",
+        # tiles='CartoDB Positron',
+        zoom_start=8,
         max_zoom=18,
     )
-    HeatMap(
-        points,
-        min_opacity = 0.5,
-        max_zoom=10,
-        radius=7,
-        blur=1,
+    # HeatMap(
+    #     points,
+    #     min_opacity = 0.4,
+    #     max_zoom=10,
+    #     radius=7,
+    #     blur=1,
+    # ).add_to(m)
+    folium.GeoJson(
+        geojson_data,
+        marker=folium.CircleMarker(radius=7, color='red', fill=True),
+        tooltip=folium.GeoJsonTooltip(
+            fields=['file', 'addr', 'coords'],
+            aliases=['Файл:', 'Адрес:', 'Коорд:']
+        ),
+        popup=folium.GeoJsonPopup(fields=['file', 'addr', 'coords'])
     ).add_to(m)
 
     for file in sorted(os.listdir('templates')):
