@@ -98,7 +98,11 @@ def main():
                         geojson_features.append({
                             "type": "Feature",
                             "geometry": {"type": "Point", "coordinates": [accident.coord_l, accident.coord_w]},
-                            "properties": {"file": file, "addr": f"{accident.dor}, {accident.np}, {accident.street}, {accident.house}", "coords": f"{accident.empt_number}: {accident.coord_l}, {accident.coord_w}"}
+                            "properties": {
+                                # "file": file, 
+                                "addr": f"{accident.dor}, {accident.np}, {accident.street}, {accident.house}", 
+                                # "coords": f"{accident.empt_number}: {accident.coord_l}, {accident.coord_w}",
+                                }
                         })
     geojson_data = {"type": "FeatureCollection", "features": geojson_features}
     logger.info("Обнаружено %s точек ДТП.", f"{len(points):,d}")
@@ -125,10 +129,10 @@ def main():
         geojson_data,
         marker=folium.CircleMarker(radius=7, color='red', fill=True),
         tooltip=folium.GeoJsonTooltip(
-            fields=['file', 'addr', 'coords'],
-            aliases=['Файл:', 'Адрес:', 'Коорд:']
+            fields=['addr'],
+            aliases=['Адрес:']
         ),
-        popup=folium.GeoJsonPopup(fields=['file', 'addr', 'coords'])
+        popup=folium.GeoJsonPopup(fields=['addr'])
     ).add_to(m)
 
     for file in sorted(os.listdir('templates')):
