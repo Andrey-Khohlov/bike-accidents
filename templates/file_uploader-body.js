@@ -60,7 +60,7 @@
                         alert("Не найдено точек trkpt в GPX файле");
                         return;
                     }
-                    var polyline = L.polyline(coordinates, {color: 'red', weight: 4}).addTo(map);
+                    var polyline = L.polyline(coordinates, {color: 'blue', weight: 4}).addTo(map);
                     map.fitBounds(polyline.getBounds());
                     console.log("GPX загружен, точек: " + coordinates.length);
                 };

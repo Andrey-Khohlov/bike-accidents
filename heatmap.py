@@ -127,11 +127,11 @@ def main():
     # ).add_to(m)
     folium.GeoJson(
         geojson_data,
-        marker=folium.CircleMarker(radius=7, color='red', fill=True),
-        tooltip=folium.GeoJsonTooltip(
-            fields=['addr'],
-            aliases=['Адрес:']
-        ),
+        marker=folium.CircleMarker(radius=3, color='red', fill=True),
+        # tooltip=folium.GeoJsonTooltip(
+        #     fields=['addr'],
+        #     aliases=['Адрес:']
+        # ),
         popup=folium.GeoJsonPopup(fields=['addr'])
     ).add_to(m)
 
