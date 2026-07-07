@@ -22,11 +22,7 @@
         var controlPanel = L.control({position: 'topright'});
         controlPanel.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<input type="file" id="gpxFileInput" accept=".gpx" style="padding: 8px; background: white; border: 2px solid #ccc; border-radius: 5px;">';
-            div.style.backgroundColor = 'white';
-            div.style.padding = '8px';
-            div.style.borderRadius = '5px';
-            div.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+            div.innerHTML = '<input type="file" id="gpxFileInput" accept=".gpx">';
             return div;
         };
         controlPanel.addTo(map);
@@ -60,7 +56,7 @@
                         alert("Не найдено точек trkpt в GPX файле");
                         return;
                     }
-                    var polyline = L.polyline(coordinates, {color: 'blue', weight: 4}).addTo(map);
+                    var polyline = L.polyline(coordinates, {color: 'blue', weight: 1}).addTo(map);
                     map.fitBounds(polyline.getBounds());
                     console.log("GPX загружен, точек: " + coordinates.length);
                 };

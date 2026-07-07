@@ -100,7 +100,7 @@ def main():
                             "geometry": {"type": "Point", "coordinates": [accident.coord_l, accident.coord_w]},
                             "properties": {
                                 # "file": file, 
-                                "addr": f"{accident.dor}, {accident.np}, {accident.street}, {accident.house}", 
+                                "addr": ", ".join( [x for x in (accident.dor, accident.np, accident.street, accident.house) if x]), 
                                 # "coords": f"{accident.empt_number}: {accident.coord_l}, {accident.coord_w}",
                                 }
                         })
@@ -112,27 +112,15 @@ def main():
     center = (55.755790, 37.620038)
     m = folium.Map(
         location=center,
-        # tiles="CartoDB Voyager",
-        tiles = "OpenStreetMap",
-        # tiles='CartoDB Positron',
-        zoom_start=8,
+        tiles = "OpenStreetMap",  # tiles='CartoDB Positron', "CartoDB Voyager"
+        zoom_start=10,
         max_zoom=18,
     )
-    # HeatMap(
-    #     points,
-    #     min_opacity = 0.4,
-    #     max_zoom=10,
-    #     radius=7,
-    #     blur=1,
-    # ).add_to(m)
+
     folium.GeoJson(
         geojson_data,
-        marker=folium.CircleMarker(radius=3, color='red', fill=True),
-        # tooltip=folium.GeoJsonTooltip(
-        #     fields=['addr'],
-        #     aliases=['Адрес:']
-        # ),
-        popup=folium.GeoJsonPopup(fields=['addr'])
+        marker=folium.CircleMarker(radius=2, color='red', fill=False),
+        popup=folium.GeoJsonPopup(fields=['addr'], labels=False)
     ).add_to(m)
 
     for file in sorted(os.listdir('templates')):
