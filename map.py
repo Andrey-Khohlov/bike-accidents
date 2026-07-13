@@ -6,10 +6,11 @@ import sys
 import webbrowser
 
 import folium
-from folium.plugins import HeatMap
+from folium.plugins import Fullscreen as FullscreenPlugin
 import pydantic_core
 
 from schemas import Root
+from config import settings
 
 
 logging.basicConfig(level = logging.DEBUG,
@@ -51,7 +52,7 @@ def remove_attribution_line(file_path: str | Path, target: str = "attribution", 
         logger.warning("Ошибка при записи файла: %s", e)
         return False
 def bbox(reg, coord_w, coord_l):
-    """Определяет сто точка в границах прямоугольника reg"""
+    """Определяет что точка в границах прямоугольника reg"""
     if reg in ("msk", "cfo"):
         min_w, max_w = 49.6, 59.1
         min_l, max_l = 31.5, 47.6
@@ -59,7 +60,33 @@ def bbox(reg, coord_w, coord_l):
         logger.warning("Регион задан не верно, %s", reg)
         raise
     return (min_w < coord_w < max_w ) and (min_l < coord_l < max_l)
-        
+
+def inject_template(template_file: str, m: folium.Element, replacements: dict = {}) -> None:
+    f"""Чтение файла шаблона, опциональная замена подстановок и добавление сгенерированного элемента в объект folium.
+        template_path - файла шаблон, 
+        m - карта folium, 
+        replacements - объекты подстановки: dict(placeholder: value).
+    """
+    logger.debug("Внедряем шаблон: %s", template_file)
+
+    template_path = Path(f"templates/{template_file}")
+    js_code = template_path.read_text(encoding="utf-8")
+
+    if replacements:
+        for placeholder, value in replacements.items():
+            js_code = js_code.replace(placeholder, value)
+
+    js_code = "{% raw %}" + js_code + "{% endraw %}"
+
+    if 'body' in template_file:
+        m.get_root().html.add_child(folium.Element(js_code))
+    elif 'header' in template_file:
+        m.get_root().header.add_child(folium.Element(js_code))
+    else:
+        logger.warning("Наименование файла %s должно содержать 'header' или 'body'", template_file)
+
+    logger.debug("Шаблон внедрен: %s", template_file)
+
 def main():
     logger.debug("'folium' in sys.modules: %s", 'folium' in sys.modules)
     
@@ -99,9 +126,10 @@ def main():
                             "type": "Feature",
                             "geometry": {"type": "Point", "coordinates": [accident.coord_l, accident.coord_w]},
                             "properties": {
-                                # "file": file, 
+                                "file": file, 
                                 "addr": ", ".join( [x for x in (accident.dor, accident.np, accident.street, accident.house) if x]), 
-                                # "coords": f"{accident.empt_number}: {accident.coord_l}, {accident.coord_w}",
+                                "coords": f"{accident.coord_l}, {accident.coord_w}",
+                                "empt": accident.empt_number
                                 }
                         })
     geojson_data = {"type": "FeatureCollection", "features": geojson_features}
@@ -123,16 +151,14 @@ def main():
         popup=folium.GeoJsonPopup(fields=['addr'], labels=False)
     ).add_to(m)
 
+    FullscreenPlugin().add_to(m)
+
     for file in sorted(os.listdir('templates')):
         if file.endswith('.js') or file.endswith('.html'):
-            template_path = Path(f"templates/{file}")
-            js_code = template_path.read_text(encoding="utf-8")
-            if 'body' in file:
-                m.get_root().html.add_child(folium.Element(js_code))
-            elif 'header' in file:
-                m.get_root().header.add_child(folium.Element(js_code))
-            else:
-                logger.warning("Наименование файла %s должно содержать 'header' или 'body'", file)
+            d = dict()
+            if file == 'claim-uploader-body.html':
+                d = {f'[[APP_SCRIPT_URL]]': settings.APP_SCRIPT_URL}
+            inject_template(file, m,  d)
     
     output_file = '/home/xgb/projects/rollermap/bike-hitting/index.html'
     m.save(output_file)

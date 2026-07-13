@@ -1,0 +1,111 @@
+<!-- обработка кликов и отправка данных -->
+<script>
+    (function() {
+        let selectMode = false;
+        // Переменная для URL – будет заменена через [[APP_SCRIPT_URL]]
+        const APP_SCRIPT_URL = '[[APP_SCRIPT_URL]]';
+    
+        // Функция поиска карты Leaflet в глобальном объекте
+        function findMapVariable() {
+            for (var key in window) {
+                if (window[key] && window[key] instanceof L.Map) {
+                    return window[key];
+                }
+            }
+            return null;
+        }
+    
+        // Основная функция инициализации
+        function initDefectSelector() {
+            var map = findMapVariable();
+            if (!map) {
+                setTimeout(initDefectSelector, 200);
+                return;
+            }
+            console.log("Карта найдена, добавляем контрол выбора дефектной точки");
+    
+            var control = L.control({ position: 'topright' });
+            control.onAdd = function(map) {
+                var div = L.DomUtil.create('div', 'info legend');
+                div.style.background = 'white';
+                div.style.padding = '5px';
+                div.style.borderRadius = '5px';
+                div.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                // div.style.marginTop = '10px';
+
+                // Кнопка приведена к виду стандартной кнопки (без ярких цветов и иконок)
+                div.innerHTML = `
+                    <button id="select-defect-btn" style="
+                        display: inline-block;
+                        cursor: pointer;
+                        background: #f0f0f0;
+                        border: 1px solid #aaa;
+                        border-radius: 2px;
+                        padding: 4px 6px;
+                        font-size: 14px;
+                        font-family: Arial, sans-serif;
+                        line-height: 1.5;
+                        box-sizing: border-box;
+                        user-select: none;
+                    ">
+                       Сообщить о дефектной точке <span style="color: red; font-size: 14px;">●</span> 
+                    </button>
+                `;
+                return div;
+            };
+            control.addTo(map);
+
+            var btn = document.getElementById('select-defect-btn');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    selectMode = !selectMode;
+                    this.style.background = selectMode ? '#28a745' : '#f0f0f0'; // меняем только фон при активации
+                    this.textContent = selectMode ? 'Нажмите на точку' : 'Сообщить о дефектной точке';
+                });
+            } else {
+                console.warn('Кнопка не найдена');
+            }
+    
+            // Привязываем обработчики кликов к слоям GeoJSON (как было)
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.GeoJSON) {
+                    layer.on('click', function(e) {
+                        if (!selectMode) return;
+                        var props = e.layer.feature.properties;
+                        var data = {
+                            file: props.file || '',
+                            empt: props.empt || '',
+                            coords: props.coords || '',
+                            addr: props.addr || ''
+                        };
+    
+                        fetch(APP_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.text())
+                        .then(text => {
+                            alert('✅ Данные сохранены.');
+                            selectMode = false;
+                            var btnReset = document.getElementById('select-defect-btn');
+                            if (btnReset) {
+                                btnReset.style.background = '#f0f0f0';
+                                btnReset.innerHTML = 'Сообщить о дефетной точке <span style="color: red; font-size: 14px;">●</span>';
+                            }
+                        })
+                        .catch(err => alert('❌ Ошибка: ' + err));
+                    });
+                }
+            });
+        }
+    
+        // Запускаем инициализацию после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDefectSelector);
+        } else {
+            initDefectSelector();
+        }
+    })();
+    </script>

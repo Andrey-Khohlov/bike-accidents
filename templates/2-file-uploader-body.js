@@ -22,7 +22,30 @@
         var controlPanel = L.control({position: 'topright'});
         controlPanel.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<input type="file" id="gpxFileInput" accept=".gpx">';
+            div.style.background = 'white';
+            div.style.padding = '5px';
+            div.style.borderRadius = '5px';
+            div.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+    
+            // Вместо голого input делаем label + скрытый input
+            div.innerHTML = `
+                <label for="gpxFileInput" style="
+                    display: inline-block;
+                        cursor: pointer;
+                        background: #f0f0f0;
+                        border: 1px solid #aaa;
+                        border-radius: 2px;
+                        padding: 4px 6px;
+                        font-size: 14px;
+                        font-family: Arial, sans-serif;
+                        line-height: 1.5;
+                        box-sizing: border-box;
+                        user-select: none;
+                ">
+                    Загрузить трек
+                </label>
+                <input type="file" id="gpxFileInput" accept=".gpx" style="display: none;">
+            `;
             return div;
         };
         controlPanel.addTo(map);
