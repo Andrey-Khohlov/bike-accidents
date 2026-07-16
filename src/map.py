@@ -140,7 +140,8 @@ def main():
     center = (55.755790, 37.620038)
     m = folium.Map(
         location=center,
-        tiles = "OpenStreetMap",  # tiles='CartoDB Positron', "CartoDB Voyager"
+        tiles=f"https://tiles.api-maps.yandex.ru/v1/tiles/?projection=web_mercator&x={{x}}&y={{y}}&z={{z}}&lang=ru_RU&l=map&apikey={settings.YANDEX_API_KEY}",
+        attr="Яндекс.Карты",
         zoom_start=10,
         max_zoom=18,
     )

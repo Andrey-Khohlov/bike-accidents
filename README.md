@@ -7,7 +7,7 @@
 parser.py
 
 ## Построение карты
-heatmap.py
+map.py
 
 
 ## Справочник регионов
@@ -23,5 +23,6 @@ https://velo-1.ru/kak-sbivayut-velosipedistov-dtp-velosipedistov-video-i-tekst?y
 https://habr.com/ru/articles/354782/
 https://pikabu.ru/story/dorozhnotransportnaya_avariynost_2024_velo_12648115?ysclid=mqe1o9a0of555633660
 https://mobilitika.ru/console/safety/map/
+https://mkou-soh9.gosuslugi.ru/netcat_files/userfiles/velosiped.pdf
 
 

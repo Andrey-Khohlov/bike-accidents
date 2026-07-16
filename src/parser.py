@@ -198,9 +198,9 @@ def main():
         1178,  # 17 Ярославская область
     ]  # ЦФО: 
     }
-    check_categories(params)
-    # parser(pok=pok, reg=reg_msk, okrug='msk', start_date='1.2015', end_date='5.2026', path='data_msk')
-    parser(pok=pok, reg=reg_cfo, okrug='cfo', start_date='1.2015', end_date='5.2026', path='data_cfo')
+    # check_categories(params)
+    parser(pok=pok, reg=reg_msk, okrug='msk', start_date='5.2026', end_date='6.2026', path='/home/xgb/projects/saferoads/data_msk')
+    parser(pok=pok, reg=reg_cfo, okrug='cfo', start_date='5.2026', end_date='6.2026', path='/home/xgb/projects/saferoads/data_cfo')
 
 
 if __name__ == "__main__":
